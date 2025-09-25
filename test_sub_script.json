@@ -1,0 +1,13 @@
+{
+  "scenario_id": "68d349083c9d317cdb321282",
+  "name": "Test Script con",
+  "trigger_keywords": ["hello", "xin chào"],
+  "response_template": "Xin chào! Tôi có thể giúp gì cho bạn?",
+  "priority": 1,
+  "status": "active",
+  "match_mode": "contains",
+  "action": {
+    "type": "none"
+  },
+  "created_by": "66f2c2a4b3d4a5e6f7890123"
+}

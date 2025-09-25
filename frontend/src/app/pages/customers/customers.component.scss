@@ -1,0 +1,176 @@
+.customers-page {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 20px;
+  
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    
+    h1 {
+      margin: 0;
+      color: #333;
+    }
+  }
+}
+
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+  
+  .stat-card {
+    text-align: center;
+    min-height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    .stat-number {
+      font-size: 2rem;
+      font-weight: bold;
+      margin-bottom: 5px;
+    }
+    
+    .stat-label {
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+    
+    &.total .stat-number { color: #2196F3; }
+    &.new .stat-number { color: #4CAF50; }
+    &.potential .stat-number { color: #FF9800; }
+    &.vip .stat-number { color: #E91E63; }
+    &.inactive .stat-number { color: #9E9E9E; }
+    &.blocked .stat-number { color: #F44336; }
+  }
+}
+
+.filters-card {
+  margin-bottom: 20px;
+  
+  .filters-container {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto auto;
+    gap: 15px;
+    align-items: start;
+    
+    .search-field {
+      min-width: 250px;
+    }
+    
+    .include-deleted-checkbox {
+      margin-top: 10px;
+    }
+    
+    .clear-filters-btn {
+      margin-top: 10px;
+    }
+  }
+}
+
+.table-card {
+  .table-container {
+    overflow-x: auto;
+    
+    .customers-table {
+      width: 100%;
+      min-width: 800px;
+      
+      .customer-name {
+        .customer-facebook {
+          display: flex;
+          align-items: center;
+          font-size: 0.8rem;
+          color: #666;
+          margin-top: 4px;
+          
+          .facebook-icon {
+            font-size: 16px;
+            margin-right: 4px;
+            color: #1877F2;
+          }
+        }
+      }
+      
+      .tags-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        
+        .tag-chip {
+          font-size: 0.7rem;
+          min-height: 24px;
+          line-height: 24px;
+        }
+      }
+      
+      .actions-container {
+        display: flex;
+        gap: 4px;
+      }
+    }
+  }
+}
+
+.loading-container, .no-data-container {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  
+  mat-icon {
+    font-size: 48px;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 16px;
+  }
+  
+  p {
+    margin: 10px 0 0 0;
+  }
+}
+
+// Responsive Design
+@media (max-width: 1200px) {
+  .filters-container {
+    grid-template-columns: 1fr 1fr 1fr;
+    
+    .search-field {
+      grid-column: 1 / -1;
+    }
+    
+    .include-deleted-checkbox,
+    .clear-filters-btn {
+      grid-column: 1 / -1;
+      justify-self: start;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .customers-page {
+    padding: 10px;
+  }
+  
+  .page-header .header-content {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .stats-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .filters-container {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}

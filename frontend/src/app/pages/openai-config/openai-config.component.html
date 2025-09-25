@@ -1,0 +1,239 @@
+<!-- Header -->
+<div class="page-header">
+  <div class="header-content">
+    <div class="title-section">
+      <h1>Quản lý OpenAI</h1>
+      <p>Cấu hình và quản lý các model AI cho chatbot</p>
+    </div>
+    <div class="action-section">
+      <button mat-raised-button color="primary" (click)="onCreate()">
+        <mat-icon>add</mat-icon>
+        Thêm cấu hình
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<mat-card class="filter-card">
+  <mat-card-content>
+    <div class="filters-container">
+      <!-- Search -->
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-label>Tìm kiếm</mat-label>
+        <input matInput placeholder="Tìm theo tên hoặc mô tả..." (input)="onSearch($event)">
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      <!-- Status Filter -->
+      <mat-form-field appearance="outline">
+        <mat-label>Trạng thái</mat-label>
+        <mat-select [(value)]="statusFilter" (selectionChange)="onFilterChange()">
+          <mat-option value="">Tất cả</mat-option>
+          <mat-option value="active">Đang hoạt động</mat-option>
+          <mat-option value="inactive">Tạm dừng</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Scenario Filter -->
+      <mat-form-field appearance="outline">
+        <mat-label>Kịch bản</mat-label>
+        <mat-select [(value)]="scenarioFilter" (selectionChange)="onFilterChange()">
+          <mat-option value="">Tất cả</mat-option>
+          <mat-option *ngFor="let scenario of scenarios" [value]="scenario._id">
+            {{scenario.name}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Fanpage Filter -->
+      <mat-form-field appearance="outline">
+        <mat-label>Fanpage</mat-label>
+        <mat-select [(value)]="fanpageFilter" (selectionChange)="onFilterChange()">
+          <mat-option value="">Tất cả</mat-option>
+          <mat-option *ngFor="let fanpage of fanpages" [value]="fanpage._id">
+            {{fanpage.pageName}}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+  </mat-card-content>
+</mat-card>
+
+<!-- Loading -->
+<div *ngIf="loading" class="loading-container">
+  <mat-spinner></mat-spinner>
+  <p>Đang tải...</p>
+</div>
+
+<!-- Data Table -->
+<mat-card *ngIf="!loading">
+  <mat-card-content>
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource" class="configs-table">
+
+        <!-- Name Column -->
+        <ng-container matColumnDef="name">
+          <th mat-header-cell *matHeaderCellDef>Tên cấu hình</th>
+          <td mat-cell *matCellDef="let config">
+            <div class="config-name">
+              <strong>{{config.name}}</strong>
+              <div class="config-description" *ngIf="config.description">
+                {{config.description}}
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Model Column -->
+        <ng-container matColumnDef="model">
+          <th mat-header-cell *matHeaderCellDef>Model</th>
+          <td mat-cell *matCellDef="let config">
+            <mat-chip [color]="getModelColor(config.model)" selected>
+              {{getModelName(config.model)}}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Trạng thái</th>
+          <td mat-cell *matCellDef="let config">
+            <mat-chip [color]="config.status === 'active' ? 'primary' : 'warn'" selected>
+              {{config.status === 'active' ? 'Hoạt động' : 'Tạm dừng'}}
+            </mat-chip>
+          </td>
+        </ng-container>
+
+        <!-- Default Column -->
+        <ng-container matColumnDef="isDefault">
+          <th mat-header-cell *matHeaderCellDef>Mặc định</th>
+          <td mat-cell *matCellDef="let config">
+            <mat-icon *ngIf="config.isDefault" color="primary">star</mat-icon>
+            <span *ngIf="!config.isDefault">-</span>
+          </td>
+        </ng-container>
+
+        <!-- Scenarios Column -->
+        <ng-container matColumnDef="scenarios">
+          <th mat-header-cell *matHeaderCellDef>Kịch bản</th>
+          <td mat-cell *matCellDef="let config">
+            <span class="scenario-list">{{getScenarioNames(config.applicableScenarios)}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Fanpages Column -->
+        <ng-container matColumnDef="fanpages">
+          <th mat-header-cell *matHeaderCellDef>Fanpages</th>
+          <td mat-cell *matCellDef="let config">
+            <span class="fanpage-list">{{getFanpageNames(config.applicableFanpages)}}</span>
+          </td>
+        </ng-container>
+
+        <!-- Total Requests Column -->
+        <ng-container matColumnDef="totalRequests">
+          <th mat-header-cell *matHeaderCellDef>Requests</th>
+          <td mat-cell *matCellDef="let config">
+            <div class="stats-cell">
+              <strong>{{config.totalRequests || 0}}</strong>
+              <small>Tokens: {{config.totalTokensUsed || 0}}</small>
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Success Rate Column -->
+        <ng-container matColumnDef="successRate">
+          <th mat-header-cell *matHeaderCellDef>Tỷ lệ thành công</th>
+          <td mat-cell *matCellDef="let config">
+            <div class="success-rate" [class.high]="getSuccessRateValue(config) >= 90" 
+                 [class.medium]="getSuccessRateValue(config) >= 70 && getSuccessRateValue(config) < 90"
+                 [class.low]="getSuccessRateValue(config) < 70">
+              {{getSuccessRate(config)}}
+            </div>
+          </td>
+        </ng-container>
+
+        <!-- Last Used Column -->
+        <ng-container matColumnDef="lastUsedAt">
+          <th mat-header-cell *matHeaderCellDef>Sử dụng cuối</th>
+          <td mat-cell *matCellDef="let config">
+            {{formatDate(config.lastUsedAt)}}
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Thao tác</th>
+          <td mat-cell *matCellDef="let config">
+            <div class="action-buttons">
+              <!-- Test Button -->
+              <button mat-icon-button 
+                      matTooltip="Test cấu hình"
+                      color="accent"
+                      (click)="onTest(config)">
+                <mat-icon>play_arrow</mat-icon>
+              </button>
+
+              <!-- Stats Button -->
+              <button mat-icon-button 
+                      matTooltip="Xem thống kê"
+                      color="primary"
+                      (click)="onViewStats(config)">
+                <mat-icon>analytics</mat-icon>
+              </button>
+
+              <!-- Set Default Button -->
+              <button mat-icon-button 
+                      matTooltip="Đặt làm mặc định"
+                      color="primary"
+                      [disabled]="config.isDefault"
+                      (click)="onSetDefault(config)">
+                <mat-icon>star_border</mat-icon>
+              </button>
+
+              <!-- Edit Button -->
+              <button mat-icon-button 
+                      matTooltip="Chỉnh sửa"
+                      color="primary"
+                      (click)="onEdit(config)">
+                <mat-icon>edit</mat-icon>
+              </button>
+
+              <!-- Delete Button -->
+              <button mat-icon-button 
+                      matTooltip="Xóa"
+                      color="warn"
+                      [disabled]="config.isDefault"
+                      (click)="onDelete(config)">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <!-- No Data -->
+      <div *ngIf="dataSource.data.length === 0" class="no-data">
+        <mat-icon>settings</mat-icon>
+        <h3>Chưa có cấu hình OpenAI</h3>
+        <p>Tạo cấu hình đầu tiên để bắt đầu sử dụng AI chatbot</p>
+        <button mat-raised-button color="primary" (click)="onCreate()">
+          <mat-icon>add</mat-icon>
+          Tạo cấu hình
+        </button>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <mat-paginator 
+      [length]="totalItems"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      [showFirstLastButtons]="true"
+      (page)="onPageChange()">
+    </mat-paginator>
+  </mat-card-content>
+</mat-card>

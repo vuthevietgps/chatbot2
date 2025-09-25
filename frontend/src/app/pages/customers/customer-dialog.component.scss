@@ -1,0 +1,103 @@
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 500px;
+  max-height: 70vh;
+  overflow-y: auto;
+  
+  .full-width {
+    width: 100%;
+  }
+}
+
+.tags-section {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: #fafafa;
+  
+  h3 {
+    margin: 0 0 12px 0;
+    color: #333;
+    font-size: 1.1rem;
+  }
+  
+  h4 {
+    margin: 16px 0 8px 0;
+    color: #666;
+    font-size: 0.9rem;
+  }
+  
+  .current-tags {
+    margin-bottom: 16px;
+    
+    mat-chip-list {
+      mat-chip {
+        margin: 2px;
+        background-color: #2196F3;
+        color: white;
+      }
+    }
+  }
+  
+  .add-tag-container {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 16px;
+    
+    .tag-input {
+      flex: 1;
+    }
+    
+    button {
+      margin-top: 8px;
+    }
+  }
+  
+  .available-tags {
+    .available-tags-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      
+      .available-tag-chip {
+        cursor: pointer;
+        transition: all 0.2s;
+        background-color: #e0e0e0;
+        
+        &:hover {
+          background-color: #2196F3;
+          color: white;
+        }
+      }
+    }
+  }
+}
+
+mat-dialog-actions {
+  padding: 16px 0 0 0;
+  margin: 0;
+  
+  button {
+    margin-left: 8px;
+  }
+}
+
+// Responsive
+@media (max-width: 600px) {
+  .form-container {
+    min-width: auto;
+    max-width: 90vw;
+  }
+  
+  .add-tag-container {
+    flex-direction: column;
+    
+    button {
+      margin-top: 0;
+      align-self: flex-start;
+    }
+  }
+}

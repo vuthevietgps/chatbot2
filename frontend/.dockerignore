@@ -1,0 +1,18 @@
+# Frontend .dockerignore
+node_modules
+npm-debug.log
+Dockerfile
+.dockerignore
+.git
+.gitignore
+README.md
+.env
+.env.local
+.env.development
+.env.test
+e2e
+src/**/*.spec.ts
+coverage
+.nyc_output
+.DS_Store
+dist

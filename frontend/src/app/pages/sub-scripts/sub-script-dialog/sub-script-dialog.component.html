@@ -1,0 +1,237 @@
+<div class="sub-script-dialog">
+  <h2 mat-dialog-title>
+    {{ isEditMode ? 'Chỉnh sửa Script con' : 'Tạo Script con mới' }}
+  </h2>
+
+  <div mat-dialog-content class="dialog-content">
+    <form [formGroup]="form" class="sub-script-form">
+      
+      <!-- Basic Information -->
+      <div class="form-section">
+        <h3>Thông tin cơ bản</h3>
+        
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Nhóm kịch bản *</mat-label>
+            <mat-select formControlName="scenario_id" required>
+              <mat-option *ngFor="let scenario of scriptGroups" [value]="scenario._id">
+                {{ scenario.name }}
+              </mat-option>
+            </mat-select>
+            <mat-error>{{ getErrorMessage('scenario_id') }}</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Tên Script *</mat-label>
+            <input matInput formControlName="name" placeholder="VD: Thu thập SĐT, Chào khách mới">
+            <mat-error>{{ getErrorMessage('name') }}</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Response Template *</mat-label>
+            <textarea 
+              matInput 
+              formControlName="response_template" 
+              rows="4"
+              placeholder="Nội dung phản hồi bot sẽ gửi. Hỗ trợ biến {{ '{' }}{{ '{' }}variable{{ '}' }}{{ '}' }}">
+            </textarea>
+            <mat-hint>Có thể sử dụng biến như {{ '{' }}{{ '{' }}name{{ '}' }}{{ '}' }}, {{ '{' }}{{ '{' }}phone{{ '}' }}{{ '}' }}, v.v.</mat-hint>
+            <mat-error>{{ getErrorMessage('response_template') }}</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Trigger Configuration -->
+      <div class="form-section">
+        <h3>Cấu hình kích hoạt</h3>
+        
+        <div class="keywords-section">
+          <label class="section-label">Từ khóa kích hoạt</label>
+          <div formArrayName="trigger_keywords">
+            <div 
+              *ngFor="let keyword of triggerKeywords.controls; let i = index" 
+              class="keyword-row"
+            >
+              <mat-form-field appearance="outline" class="keyword-field">
+                <mat-label>Từ khóa {{ i + 1 }}</mat-label>
+                <input matInput [formControlName]="i" placeholder="VD: sdt, số điện thoại">
+              </mat-form-field>
+              
+              <button 
+                type="button" 
+                mat-icon-button 
+                color="warn"
+                (click)="removeKeyword(i)"
+                [disabled]="triggerKeywords.length === 1"
+                matTooltip="Xóa từ khóa">
+                <mat-icon>remove</mat-icon>
+              </button>
+            </div>
+          </div>
+          
+          <button 
+            type="button" 
+            mat-stroked-button 
+            (click)="addKeyword()"
+            class="add-keyword-btn">
+            <mat-icon>add</mat-icon>
+            Thêm từ khóa
+          </button>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="half-width">
+            <mat-label>Chế độ khớp</mat-label>
+            <mat-select formControlName="match_mode">
+              <mat-option *ngFor="let mode of matchModes" [value]="mode.value">
+                {{ mode.label }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="half-width">
+            <mat-label>Ưu tiên</mat-label>
+            <input matInput type="number" formControlName="priority" min="1" max="100">
+            <mat-hint>1-100, số càng cao ưu tiên càng lớn</mat-hint>
+            <mat-error>{{ getErrorMessage('priority') }}</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Product Linking -->
+      <div class="form-section">
+        <h3>Liên kết sản phẩm (tuỳ chọn)</h3>
+        
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="half-width">
+            <mat-label>Sản phẩm</mat-label>
+            <mat-select formControlName="product_id">
+              <mat-option value="">Không chọn</mat-option>
+              <mat-option *ngFor="let product of products" [value]="product._id">
+                {{ product.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="half-width">
+            <mat-label>Nhóm sản phẩm</mat-label>
+            <mat-select formControlName="product_group_id">
+              <mat-option value="">Không chọn</mat-option>
+              <mat-option *ngFor="let group of productGroups" [value]="group._id">
+                {{ group.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Action Configuration -->
+      <div class="form-section">
+        <h3>Hành động sau khi kích hoạt</h3>
+        
+        <div formGroupName="action">
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Loại hành động</mat-label>
+              <mat-select formControlName="type" (selectionChange)="onActionTypeChange()">
+                <mat-option *ngFor="let action of actionTypes" [value]="action.value">
+                  {{ action.label }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Set Variable Action -->
+          <div *ngIf="actionType === 'set_variable'" class="action-fields">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Tên biến *</mat-label>
+                <input matInput formControlName="key" placeholder="VD: phone, email">
+                <mat-error>{{ getErrorMessage('action.key') }}</mat-error>
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="half-width">
+                <mat-label>Giá trị *</mat-label>
+                <input matInput formControlName="value" placeholder="VD: {{ '{' }}{{ '{' }}input{{ '}' }}{{ '}' }}, {{ '{' }}{{ '{' }}user_input{{ '}' }}{{ '}' }}">
+                <mat-error>{{ getErrorMessage('action.value') }}</mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Add Tag Action -->
+          <div *ngIf="actionType === 'add_tag'" class="action-fields">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Tên thẻ *</mat-label>
+                <input matInput formControlName="tag_name" placeholder="VD: interested, vip_customer">
+                <mat-error>{{ getErrorMessage('action.tag_name') }}</mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Call Webhook Action -->
+          <div *ngIf="actionType === 'call_webhook'" class="action-fields">
+            <div class="form-row">
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Webhook URL *</mat-label>
+                <input 
+                  matInput 
+                  formControlName="webhook_url" 
+                  placeholder="https://api.example.com/webhook"
+                  type="url">
+                <mat-error>{{ getErrorMessage('action.webhook_url') }}</mat-error>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Options -->
+      <div class="form-section">
+        <h3>Tùy chọn khác</h3>
+        
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="half-width">
+            <mat-label>Trạng thái</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="active">Hoạt động</mat-option>
+              <mat-option value="inactive">Tạm dừng</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Yêu cầu ngữ cảnh</mat-label>
+            <textarea 
+              matInput 
+              formControlName="context_required" 
+              rows="2"
+              placeholder="VD: Chỉ dùng khi khách đã để lại tên, hoặc chỉ trong giờ làm việc">
+            </textarea>
+            <mat-hint>Ghi chú về điều kiện sử dụng Script con này</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <div mat-dialog-actions class="dialog-actions">
+    <button mat-button (click)="onCancel()" [disabled]="loading">
+      Hủy
+    </button>
+    <button 
+      mat-raised-button 
+      color="primary" 
+      (click)="onSubmit()" 
+      [disabled]="loading || form.invalid">
+      <mat-spinner diameter="20" *ngIf="loading"></mat-spinner>
+      {{ isEditMode ? 'Cập nhật' : 'Tạo mới' }}
+    </button>
+  </div>
+</div>

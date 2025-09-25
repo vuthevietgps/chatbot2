@@ -1,0 +1,189 @@
+<div class="sub-scripts-container">
+  <!-- Header -->
+  <div class="header-section">
+    <h2>Quản lý Script con</h2>
+    <div class="header-actions">
+      <button mat-raised-button color="primary" (click)="openCreateDialog()">
+        <mat-icon>add</mat-icon>
+        Thêm Script con
+      </button>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="stats-section" *ngIf="statistics">
+    <mat-card class="stat-card">
+      <mat-card-content>
+        <div class="stat-number">{{ statistics.total }}</div>
+        <div class="stat-label">Tổng Script con</div>
+      </mat-card-content>
+    </mat-card>
+    
+    <mat-card class="stat-card active">
+      <mat-card-content>
+        <div class="stat-number">{{ statistics.active }}</div>
+        <div class="stat-label">Đang hoạt động</div>
+      </mat-card-content>
+    </mat-card>
+    
+    <mat-card class="stat-card inactive">
+      <mat-card-content>
+        <div class="stat-number">{{ statistics.inactive }}</div>
+        <div class="stat-label">Tạm dừng</div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <mat-card>
+      <mat-card-content>
+        <div class="filter-row">
+          <mat-form-field appearance="outline" class="scenario-filter">
+            <mat-label>Lọc theo kịch bản</mat-label>
+            <mat-select [(value)]="selectedScenarioId" (selectionChange)="onScenarioFilter()">
+              <mat-option value="">Tất cả kịch bản</mat-option>
+              <mat-option *ngFor="let scenario of scenarios" [value]="scenario._id">
+                {{ scenario.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="search-field">
+            <mat-label>Tìm kiếm Script con</mat-label>
+            <input matInput (keyup)="applyFilter($event)" placeholder="Nhập tên Script con...">
+            <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <!-- Data Table -->
+  <div class="table-section">
+    <mat-card>
+      <mat-card-content class="table-content">
+        <div class="table-container">
+          <table mat-table [dataSource]="dataSource" matSort class="sub-scripts-table">
+            
+            <!-- Name Column -->
+            <ng-container matColumnDef="name">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Tên Script</th>
+              <td mat-cell *matCellDef="let subScript">
+                <div class="name-cell">
+                  <div class="name-primary">{{ subScript.name }}</div>
+                  <div class="name-secondary" *ngIf="subScript.context_required">
+                    <mat-icon class="context-icon">info</mat-icon>
+                    {{ subScript.context_required }}
+                  </div>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Scenario Column -->
+            <ng-container matColumnDef="scenario">
+              <th mat-header-cell *matHeaderCellDef>Kịch bản</th>
+              <td mat-cell *matCellDef="let subScript">
+                <mat-chip-set>
+                  <mat-chip color="accent" selected>{{ subScript.scenario?.name || 'N/A' }}</mat-chip>
+                </mat-chip-set>
+              </td>
+            </ng-container>
+
+            <!-- Trigger Keywords Column -->
+            <ng-container matColumnDef="trigger_keywords">
+              <th mat-header-cell *matHeaderCellDef>Từ khóa kích hoạt</th>
+              <td mat-cell *matCellDef="let subScript">
+                <div class="keywords-cell">
+                  <span class="keywords-text">{{ getTriggerKeywordsDisplay(subScript.trigger_keywords) }}</span>
+                  <mat-icon 
+                    *ngIf="subScript.trigger_keywords && subScript.trigger_keywords.length > 2"
+                    class="more-icon"
+                    [matTooltip]="subScript.trigger_keywords.join(', ')">
+                    more_horiz
+                  </mat-icon>
+                </div>
+              </td>
+            </ng-container>
+
+            <!-- Priority Column -->
+            <ng-container matColumnDef="priority">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Ưu tiên</th>
+              <td mat-cell *matCellDef="let subScript">
+                <mat-chip-set>
+                  <mat-chip [color]="subScript.priority > 5 ? 'warn' : 'primary'" selected>
+                    {{ subScript.priority }}
+                  </mat-chip>
+                </mat-chip-set>
+              </td>
+            </ng-container>
+
+            <!-- Status Column -->
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Trạng thái</th>
+              <td mat-cell *matCellDef="let subScript">
+                <mat-chip-set>
+                  <mat-chip [color]="getStatusColor(subScript.status)" selected>
+                    {{ getStatusText(subScript.status) }}
+                  </mat-chip>
+                </mat-chip-set>
+              </td>
+            </ng-container>
+
+            <!-- Created Date Column -->
+            <ng-container matColumnDef="created_at">
+              <th mat-header-cell *matHeaderCellDef mat-sort-header>Ngày tạo</th>
+              <td mat-cell *matCellDef="let subScript">
+                {{ subScript.created_at | date:'dd/MM/yyyy HH:mm' }}
+              </td>
+            </ng-container>
+
+            <!-- Actions Column -->
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef>Thao tác</th>
+              <td mat-cell *matCellDef="let subScript">
+                <div class="actions-cell">
+                  <button mat-icon-button [matTooltip]="'Chỉnh sửa'" (click)="openEditDialog(subScript)">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  
+                  <button 
+                    mat-icon-button 
+                    [matTooltip]="subScript.status === 'active' ? 'Tạm dừng' : 'Kích hoạt'"
+                    (click)="toggleStatus(subScript)">
+                    <mat-icon>{{ subScript.status === 'active' ? 'pause' : 'play_arrow' }}</mat-icon>
+                  </button>
+                  
+                  <button mat-icon-button [matTooltip]="'Xóa'" (click)="deleteSubScript(subScript)" color="warn">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+
+          <div class="no-data" *ngIf="dataSource.data.length === 0 && !loading">
+            <mat-icon>inbox</mat-icon>
+            <p>Chưa có Script con nào</p>
+            <button mat-raised-button color="primary" (click)="openCreateDialog()">
+              Tạo Script con đầu tiên
+            </button>
+          </div>
+
+          <div class="loading" *ngIf="loading">
+            <mat-spinner diameter="50"></mat-spinner>
+            <p>Đang tải dữ liệu...</p>
+          </div>
+        </div>
+
+        <mat-paginator 
+          [pageSizeOptions]="[10, 25, 50, 100]" 
+          showFirstLastButtons>
+        </mat-paginator>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,191 @@
+<div class="dialog-container">
+  <!-- Header -->
+  <div class="dialog-header">
+    <h2 mat-dialog-title>{{dialogTitle}}</h2>
+    <button mat-icon-button mat-dialog-close>
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Form Content -->
+  <mat-dialog-content class="dialog-content">
+    <form [formGroup]="form" class="config-form">
+      
+      <!-- Basic Information -->
+      <div class="form-section">
+        <h3>Thông tin cơ bản</h3>
+        
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Tên cấu hình *</mat-label>
+            <input matInput formControlName="name" placeholder="VD: GPT-4 cho Fanpage Thời Trang">
+            <mat-error *ngIf="hasError('name', 'required')">Tên cấu hình là bắt buộc</mat-error>
+            <mat-error *ngIf="hasError('name', 'minlength')">Tên cấu hình tối thiểu 3 ký tự</mat-error>
+            <mat-error *ngIf="hasError('name', 'maxlength')">Tên cấu hình tối đa 100 ký tự</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Mô tả</mat-label>
+            <textarea matInput formControlName="description" 
+                      placeholder="Mô tả chi tiết về cách sử dụng cấu hình này..."
+                      rows="3"></textarea>
+            <mat-error *ngIf="hasError('description', 'maxlength')">Mô tả tối đa 500 ký tự</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- OpenAI Configuration -->
+      <div class="form-section">
+        <h3>Cấu hình OpenAI</h3>
+        
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Model OpenAI *</mat-label>
+            <mat-select formControlName="model" (selectionChange)="onModelChange($event.value)">
+              <mat-option *ngFor="let model of availableModels" [value]="model.id">
+                <div class="model-option">
+                  <strong>{{model.name}}</strong>
+                  <div class="model-description">{{model.description}}</div>
+                  <div class="model-stats">
+                    Max tokens: {{model.maxTokens}} | Cost: ${{model.costPer1kTokens}}/1K tokens
+                  </div>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="hasError('model', 'required')">Vui lòng chọn model</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>OpenAI API Key *</mat-label>
+            <input matInput formControlName="apiKey" 
+                   placeholder="sk-..." 
+                   type="password"
+                   autocomplete="off">
+            <mat-icon matSuffix>key</mat-icon>
+            <mat-hint>API Key từ OpenAI platform (https://platform.openai.com/api-keys)</mat-hint>
+            <mat-error *ngIf="hasError('apiKey', 'required')">API Key là bắt buộc</mat-error>
+            <mat-error *ngIf="hasError('apiKey', 'pattern')">API Key không hợp lệ (phải bắt đầu bằng sk-)</mat-error>
+          </mat-form-field>
+          
+          <button type="button" 
+                  mat-stroked-button 
+                  color="accent"
+                  class="test-button"
+                  [disabled]="loading || !form.get('apiKey')?.value || !form.get('model')?.value"
+                  (click)="testApiKey()">
+            <mat-icon *ngIf="!loading">play_arrow</mat-icon>
+            <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+            Test API Key
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Parameters -->
+      <div class="form-section">
+        <h3>Tham số AI</h3>
+        
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>System Prompt *</mat-label>
+            <textarea matInput formControlName="systemPrompt" 
+                      placeholder="Bạn là trợ lý AI thông minh..."
+                      rows="4"></textarea>
+            <mat-hint>Hướng dẫn cho AI về cách trả lời và vai trò của nó</mat-hint>
+            <mat-error *ngIf="hasError('systemPrompt', 'required')">System Prompt là bắt buộc</mat-error>
+            <mat-error *ngIf="hasError('systemPrompt', 'minlength')">System Prompt tối thiểu 10 ký tự</mat-error>
+            <mat-error *ngIf="hasError('systemPrompt', 'maxlength')">System Prompt tối đa 2000 ký tự</mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="form-row two-columns">
+          <mat-form-field appearance="outline">
+            <mat-label>Max Tokens *</mat-label>
+            <input matInput type="number" formControlName="maxTokens" min="50" max="4000">
+            <mat-hint>Số token tối đa cho mỗi response (50-4000)</mat-hint>
+            <mat-error *ngIf="hasError('maxTokens', 'required')">Max Tokens là bắt buộc</mat-error>
+            <mat-error *ngIf="hasError('maxTokens', 'min')">Tối thiểu 50 tokens</mat-error>
+            <mat-error *ngIf="hasError('maxTokens', 'max')">Tối đa 4000 tokens</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Temperature *</mat-label>
+            <input matInput type="number" formControlName="temperature" 
+                   min="0" max="2" step="0.1">
+            <mat-hint>Độ sáng tạo (0: nghiêm túc, 2: sáng tạo)</mat-hint>
+            <mat-error *ngIf="hasError('temperature', 'required')">Temperature là bắt buộc</mat-error>
+            <mat-error *ngIf="hasError('temperature', 'min')">Tối thiểu 0</mat-error>
+            <mat-error *ngIf="hasError('temperature', 'max')">Tối đa 2</mat-error>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Application Scope -->
+      <div class="form-section">
+        <h3>Phạm vi áp dụng</h3>
+        
+        <div class="form-row two-columns">
+          <mat-form-field appearance="outline">
+            <mat-label>Kịch bản áp dụng</mat-label>
+            <mat-select formControlName="applicableScenarios" multiple>
+              <mat-option *ngFor="let scenario of data.scenarios" [value]="scenario._id">
+                {{scenario.name}}
+              </mat-option>
+            </mat-select>
+            <mat-hint>Chọn các kịch bản sẽ sử dụng cấu hình này</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Fanpages áp dụng</mat-label>
+            <mat-select formControlName="applicableFanpages" multiple>
+              <mat-option *ngFor="let fanpage of data.fanpages" [value]="fanpage._id">
+                {{fanpage.pageName}}
+              </mat-option>
+            </mat-select>
+            <mat-hint>Chọn các fanpage sẽ sử dụng cấu hình này</mat-hint>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Status Settings -->
+      <div class="form-section">
+        <h3>Cài đặt trạng thái</h3>
+        
+        <div class="form-row two-columns">
+          <mat-form-field appearance="outline">
+            <mat-label>Trạng thái *</mat-label>
+            <mat-select formControlName="status">
+              <mat-option value="active">Đang hoạt động</mat-option>
+              <mat-option value="inactive">Tạm dừng</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div class="checkbox-field">
+            <mat-checkbox formControlName="isDefault">
+              Đặt làm cấu hình mặc định
+            </mat-checkbox>
+            <mat-hint>Cấu hình mặc định sẽ được sử dụng khi không có cấu hình cụ thể</mat-hint>
+          </div>
+        </div>
+      </div>
+
+    </form>
+  </mat-dialog-content>
+
+  <!-- Actions -->
+  <mat-dialog-actions class="dialog-actions">
+    <button mat-button (click)="onCancel()" [disabled]="loading">
+      Hủy
+    </button>
+    <button mat-raised-button 
+            color="primary" 
+            (click)="onSubmit()" 
+            [disabled]="loading || form.invalid">
+      <mat-spinner *ngIf="loading" diameter="20"></mat-spinner>
+      <span *ngIf="!loading">{{isEditMode ? 'Cập nhật' : 'Tạo mới'}}</span>
+    </button>
+  </mat-dialog-actions>
+</div>

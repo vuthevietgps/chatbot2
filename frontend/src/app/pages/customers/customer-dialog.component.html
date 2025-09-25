@@ -1,0 +1,126 @@
+<h2 mat-dialog-title>
+  {{ isEdit ? 'Chỉnh sửa khách hàng' : 'Thêm khách hàng mới' }}
+</h2>
+
+<form [formGroup]="customerForm" (ngSubmit)="onSubmit()">
+  <mat-dialog-content>
+    <div class="form-container">
+      <!-- Name -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Tên khách hàng *</mat-label>
+        <input matInput formControlName="name" placeholder="Nhập tên khách hàng">
+        <mat-error *ngIf="customerForm.get('name')?.hasError('required')">
+          Tên khách hàng là bắt buộc
+        </mat-error>
+        <mat-error *ngIf="customerForm.get('name')?.hasError('minlength')">
+          Tên khách hàng phải có ít nhất 2 ký tự
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Phone -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Số điện thoại</mat-label>
+        <input matInput formControlName="phone" placeholder="Nhập số điện thoại">
+        <mat-error *ngIf="customerForm.get('phone')?.hasError('pattern')">
+          Số điện thoại không hợp lệ
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Email -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" type="email" placeholder="Nhập email">
+        <mat-error *ngIf="customerForm.get('email')?.hasError('email')">
+          Email không hợp lệ
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Facebook ID -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Facebook ID</mat-label>
+        <input matInput formControlName="facebookId" placeholder="Nhập Facebook ID">
+      </mat-form-field>
+
+      <!-- Fanpage -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Fanpage</mat-label>
+        <mat-select formControlName="fanpageId">
+          <mat-option value="">Chọn fanpage</mat-option>
+          <mat-option *ngFor="let fanpage of data.fanpages" [value]="fanpage._id">
+            {{ fanpage.pageName }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Status -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Trạng thái *</mat-label>
+        <mat-select formControlName="status">
+          <mat-option *ngFor="let status of customerStatuses" [value]="status">
+            {{ getStatusText(status) }}
+          </mat-option>
+        </mat-select>
+        <mat-error *ngIf="customerForm.get('status')?.hasError('required')">
+          Trạng thái là bắt buộc
+        </mat-error>
+      </mat-form-field>
+
+      <!-- Tags -->
+      <div class="tags-section">
+        <h3>Tags</h3>
+        
+        <!-- Current Tags -->
+        <div class="current-tags" *ngIf="customerForm.get('tags')?.value?.length > 0">
+          <mat-chip-set>
+            <mat-chip 
+              *ngFor="let tag of customerForm.get('tags')?.value" 
+              removable="true" 
+              (removed)="removeTag(tag)">
+              {{ tag }}
+              <mat-icon matChipRemove>cancel</mat-icon>
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+
+        <!-- Add New Tag -->
+        <div class="add-tag-container">
+          <mat-form-field appearance="outline" class="tag-input">
+            <mat-label>Thêm tag mới</mat-label>
+            <input matInput [(ngModel)]="newTag" (keyup.enter)="addTag()" [ngModelOptions]="{standalone: true}">
+          </mat-form-field>
+          <button mat-icon-button type="button" (click)="addTag()" [disabled]="!newTag.trim()">
+            <mat-icon>add</mat-icon>
+          </button>
+        </div>
+
+        <!-- Available Tags -->
+        <div class="available-tags" *ngIf="data.availableTags.length > 0">
+          <h4>Tags có sẵn:</h4>
+          <div class="available-tags-list">
+            <mat-chip-set>
+              <mat-chip 
+                *ngFor="let tag of data.availableTags" 
+                (click)="addExistingTag(tag)"
+                class="available-tag-chip">
+                {{ tag }}
+              </mat-chip>
+            </mat-chip-set>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Ghi chú</mat-label>
+        <textarea matInput formControlName="notes" rows="3" placeholder="Nhập ghi chú"></textarea>
+      </mat-form-field>
+    </div>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="onCancel()">Hủy</button>
+    <button mat-raised-button color="primary" type="submit" [disabled]="!customerForm.valid">
+      {{ isEdit ? 'Cập nhật' : 'Tạo mới' }}
+    </button>
+  </mat-dialog-actions>
+</form>

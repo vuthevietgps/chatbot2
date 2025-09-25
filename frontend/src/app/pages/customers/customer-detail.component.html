@@ -1,0 +1,139 @@
+<h2 mat-dialog-title>Chi tiết khách hàng</h2>
+
+<mat-dialog-content class="customer-detail-content">
+  <div class="customer-info">
+    <!-- Basic Information -->
+    <mat-card class="info-card">
+      <mat-card-header>
+        <mat-card-title>Thông tin cơ bản</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="info-grid">
+          <div class="info-item">
+            <strong>Tên:</strong>
+            <span>{{ data.customer.name }}</span>
+          </div>
+          
+          <div class="info-item" *ngIf="data.customer.phone">
+            <strong>Số điện thoại:</strong>
+            <span>{{ data.customer.phone }}</span>
+          </div>
+          
+          <div class="info-item" *ngIf="data.customer.email">
+            <strong>Email:</strong>
+            <span>{{ data.customer.email }}</span>
+          </div>
+          
+          <div class="info-item" *ngIf="data.customer.facebookId">
+            <strong>Facebook ID:</strong>
+            <span>{{ data.customer.facebookId }}</span>
+          </div>
+          
+          <div class="info-item">
+            <strong>Trạng thái:</strong>
+            <mat-chip [color]="getStatusColor(data.customer.status)" selected>
+              {{ getStatusText(data.customer.status) }}
+            </mat-chip>
+          </div>
+          
+          <div class="info-item" *ngIf="data.customer.lastMessageAt">
+            <strong>Tin nhắn cuối:</strong>
+            <span>{{ data.customer.lastMessageAt | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          
+          <div class="info-item">
+            <strong>Ngày tạo:</strong>
+            <span>{{ data.customer.createdAt | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          
+          <div class="info-item">
+            <strong>Cập nhật cuối:</strong>
+            <span>{{ data.customer.updatedAt | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Tags -->
+    <mat-card class="tags-card" *ngIf="data.customer.tags.length > 0">
+      <mat-card-header>
+        <mat-card-title>Tags</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="tags-container">
+          <mat-chip-set>
+            <mat-chip *ngFor="let tag of data.customer.tags" class="customer-tag">
+              {{ tag }}
+            </mat-chip>
+          </mat-chip-set>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Notes -->
+    <mat-card class="notes-card" *ngIf="data.customer.notes">
+      <mat-card-header>
+        <mat-card-title>Ghi chú</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="notes-text">{{ data.customer.notes }}</p>
+      </mat-card-content>
+    </mat-card>
+
+    <!-- Conversations -->
+    <mat-card class="conversations-card">
+      <mat-card-header>
+        <mat-card-title>Lịch sử hội thoại</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <div *ngIf="loadingConversations" class="loading-conversations">
+          <mat-spinner diameter="30"></mat-spinner>
+          <span>Đang tải lịch sử hội thoại...</span>
+        </div>
+
+        <div *ngIf="!loadingConversations && conversations.length === 0" class="no-conversations">
+          <mat-icon>chat_bubble_outline</mat-icon>
+          <p>Chưa có lịch sử hội thoại</p>
+        </div>
+
+        <div *ngIf="!loadingConversations && conversations.length > 0" class="conversations-list">
+          <div *ngFor="let conversation of conversations" class="conversation-item">
+            <div class="conversation-header">
+              <span class="conversation-date">
+                {{ conversation.createdAt | date:'dd/MM/yyyy HH:mm' }}
+              </span>
+              <span class="message-count">
+                {{ conversation.messages.length }} tin nhắn
+              </span>
+            </div>
+            
+            <div class="conversation-messages">
+              <div *ngFor="let message of conversation.messages.slice(0, 3)" 
+                   class="message-preview"
+                   [class.user-message]="message.sender === 'user'"
+                   [class.page-message]="message.sender === 'page'">
+                <div class="message-sender">
+                  <mat-icon *ngIf="message.sender === 'user'">person</mat-icon>
+                  <mat-icon *ngIf="message.sender === 'page'">facebook</mat-icon>
+                  {{ message.sender === 'user' ? 'Khách hàng' : 'Fanpage' }}
+                </div>
+                <div class="message-text">{{ message.text }}</div>
+                <div class="message-time">
+                  {{ message.timestamp | date:'HH:mm' }}
+                </div>
+              </div>
+              
+              <div *ngIf="conversation.messages.length > 3" class="more-messages">
+                <small>... và {{ conversation.messages.length - 3 }} tin nhắn khác</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-raised-button color="primary" (click)="onClose()">Đóng</button>
+</mat-dialog-actions>

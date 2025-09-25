@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  # Backend Service
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: chatbot-backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # MongoDB Atlas connection (no local MongoDB needed)
+      - MONGODB_URI=${MONGODB_URI}
+      # JWT Configuration
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=24h
+      # OpenAI Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Facebook Configuration
+      - FACEBOOK_VERIFY_TOKEN=${FACEBOOK_VERIFY_TOKEN}
+      - FACEBOOK_APP_SECRET=${FACEBOOK_APP_SECRET}
+      # CORS Configuration
+      - CORS_ORIGIN=http://localhost,http://localhost:4201,https://yourdomain.com
+    volumes:
+      - ./backend/logs:/usr/src/app/logs
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Frontend Service  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: chatbot-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+    networks:
+      - chatbot-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Redis for caching (optional but recommended)
+  redis:
+    image: redis:7-alpine
+    container_name: chatbot-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - chatbot-network
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+
+  # Monitoring with Portainer (optional)
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: chatbot-portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks:
+      - chatbot-network
+
+networks:
+  chatbot-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+  portainer_data:

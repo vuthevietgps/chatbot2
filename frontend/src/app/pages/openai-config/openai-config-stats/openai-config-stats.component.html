@@ -1,0 +1,187 @@
+<div class="stats-dialog">
+  <!-- Header -->
+  <div class="dialog-header">
+    <h2 mat-dialog-title>Thống kê sử dụng</h2>
+    <div class="config-info">
+      <strong>{{data.config.name}}</strong>
+      <span class="model-badge">{{data.config.model}}</span>
+    </div>
+    <button mat-icon-button mat-dialog-close>
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Content -->
+  <mat-dialog-content class="dialog-content">
+    
+    <!-- Loading -->
+    <div *ngIf="loading" class="loading-container">
+      <mat-spinner></mat-spinner>
+      <p>Đang tải thống kê...</p>
+    </div>
+
+    <!-- Error -->
+    <div *ngIf="error && !loading" class="error-container">
+      <mat-icon color="warn">error</mat-icon>
+      <p>{{error}}</p>
+      <button mat-stroked-button color="primary" (click)="loadStats()">
+        <mat-icon>refresh</mat-icon>
+        Thử lại
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div *ngIf="stats && !loading && !error" class="stats-container">
+      
+      <!-- Overview Cards -->
+      <div class="stats-grid">
+        
+        <!-- Total Requests -->
+        <mat-card class="stat-card primary">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>send</mat-icon>
+            <mat-card-title>Tổng requests</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-value">{{formatNumber(stats.totalRequests)}}</div>
+            <div class="stat-label">Lần gọi API</div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Success Rate -->
+        <mat-card class="stat-card" [style.border-color]="getSuccessRateColor()">
+          <mat-card-header>
+            <mat-icon mat-card-avatar [style.color]="getSuccessRateColor()">check_circle</mat-icon>
+            <mat-card-title>Tỷ lệ thành công</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-value" [style.color]="getSuccessRateColor()">
+              {{getSuccessRateValue().toFixed(1)}}%
+            </div>
+            <div class="stat-label">
+              {{formatNumber(stats.successfulResponses)}} / {{formatNumber(stats.totalRequests)}}
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Total Tokens -->
+        <mat-card class="stat-card accent">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>token</mat-icon>
+            <mat-card-title>Tổng tokens</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-value">{{formatNumber(stats.totalTokensUsed)}}</div>
+            <div class="stat-label">Tokens đã sử dụng</div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Average Tokens -->
+        <mat-card class="stat-card secondary">
+          <mat-card-header>
+            <mat-icon mat-card-avatar>analytics</mat-icon>
+            <mat-card-title>Trung bình tokens</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="stat-value">{{formatNumber(stats.avgTokensPerRequest)}}</div>
+            <div class="stat-label">Tokens / request</div>
+          </mat-card-content>
+        </mat-card>
+
+      </div>
+
+      <!-- Detailed Stats -->
+      <div class="details-section">
+        <h3>Chi tiết</h3>
+        
+        <div class="details-grid">
+          
+          <!-- Success/Failure Breakdown -->
+          <mat-card class="detail-card">
+            <mat-card-header>
+              <mat-card-title>Phân tích kết quả</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="breakdown-item success">
+                <mat-icon>check_circle</mat-icon>
+                <span class="label">Thành công:</span>
+                <span class="value">{{formatNumber(stats.successfulResponses)}}</span>
+              </div>
+              <div class="breakdown-item failure">
+                <mat-icon>error</mat-icon>
+                <span class="label">Thất bại:</span>
+                <span class="value">{{formatNumber(stats.failedResponses)}}</span>
+              </div>
+              <div class="breakdown-item total">
+                <mat-icon>analytics</mat-icon>
+                <span class="label">Tổng cộng:</span>
+                <span class="value">{{formatNumber(stats.totalRequests)}}</span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Cost Estimation -->
+          <mat-card class="detail-card">
+            <mat-card-header>
+              <mat-card-title>Ước tính chi phí</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="cost-info">
+                <div class="cost-item">
+                  <span class="label">Tokens sử dụng:</span>
+                  <span class="value">{{formatNumber(stats.totalTokensUsed)}}</span>
+                </div>
+                <div class="cost-item">
+                  <span class="label">Ước tính chi phí:</span>
+                  <span class="value cost-amount">{{getCostEstimate()}}</span>
+                </div>
+                <div class="cost-note">
+                  <mat-icon>info</mat-icon>
+                  <small>Chi phí ước tính dựa trên giá trung bình OpenAI</small>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Usage Timeline -->
+          <mat-card class="detail-card full-width">
+            <mat-card-header>
+              <mat-card-title>Thông tin sử dụng</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <div class="timeline-info">
+                <div class="timeline-item">
+                  <mat-icon>schedule</mat-icon>
+                  <span class="label">Lần sử dụng cuối:</span>
+                  <span class="value">{{formatDate(stats.lastUsedAt)}}</span>
+                </div>
+                <div class="timeline-item">
+                  <mat-icon>trending_up</mat-icon>
+                  <span class="label">Tần suất sử dụng:</span>
+                  <span class="value">
+                    {{stats.totalRequests > 0 ? 'Đang hoạt động' : 'Chưa sử dụng'}}
+                  </span>
+                </div>
+              </div>
+            </mat-card-content>
+          </mat-card>
+
+        </div>
+      </div>
+
+    </div>
+
+  </mat-dialog-content>
+
+  <!-- Actions -->
+  <mat-dialog-actions class="dialog-actions">
+    <button mat-button (click)="loadStats()" [disabled]="loading">
+      <mat-icon>refresh</mat-icon>
+      Làm mới
+    </button>
+    <button mat-raised-button color="primary" (click)="onClose()">
+      Đóng
+    </button>
+  </mat-dialog-actions>
+
+</div>

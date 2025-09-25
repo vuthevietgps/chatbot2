@@ -1,0 +1,24 @@
+{
+  "object": "page",
+  "entry": [
+    {
+      "id": "fp_test_fashion_2024",
+      "time": 1695478800000,
+      "messaging": [
+        {
+          "sender": {
+            "id": "user_demo_webhook_12345"
+          },
+          "recipient": {
+            "id": "fp_test_fashion_2024"
+          },
+          "timestamp": 1695478800000,
+          "message": {
+            "mid": "mid.test123",
+            "text": "Xin chào! Tôi muốn mua áo thun có màu đỏ không?"
+          }
+        }
+      ]
+    }
+  ]
+}
